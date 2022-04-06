@@ -6,12 +6,16 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] float speed = 5f;
     [SerializeField] bool isPlaying;
+    [SerializeField] float gravityScale = 1f;
+    [SerializeField] static float globalGravity = -9.81f;
 
     Vector3 runTowards;
-    Animator animator;
+    [HideInInspector] public Animator animator;
+    Rigidbody rb;
 
     void Start()
     {
+        rb = GetComponent<Rigidbody>();
         runTowards = new Vector3(0, 0, speed);
         animator = GetComponent<Animator>();
         isPlaying = true;
@@ -22,10 +26,22 @@ public class PlayerController : MonoBehaviour
         Movement();
     }
 
+    void FixedUpdate()
+    {
+        Vector3 gravity = gravityScale * globalGravity * Vector3.up;
+        rb.AddForce(gravity, ForceMode.Acceleration);
+    }
+
     void Movement()
     {
         transform.position += runTowards * Time.deltaTime;
 
+    }
+
+    void OnEnable()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.useGravity = false;
     }
 
     private void OnCollisionEnter(Collision other)

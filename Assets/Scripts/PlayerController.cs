@@ -1,11 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] float speed = 5f;
     [SerializeField] bool isPlaying;
+
+    [Header("Score")]
+    [SerializeField] TextMeshProUGUI scoreText;
+    [SerializeField] int score;
+
+    [Header("Gravity")]
     [SerializeField] float gravityScale = 1f;
     [SerializeField] static float globalGravity = -9.81f;
 
@@ -13,12 +21,17 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public Animator animator;
     Rigidbody rb;
 
-    void Start()
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        runTowards = new Vector3(0, 0, speed);
         animator = GetComponent<Animator>();
+    }
+
+    void Start()
+    {
+        runTowards = new Vector3(0, 0, speed);
         isPlaying = true;
+        score = 0;
     }
 
     void Update()
@@ -51,4 +64,20 @@ public class PlayerController : MonoBehaviour
             animator.SetTrigger("Running");
         }
     }
+
+    public void IncreaseScore(int value)
+    {
+        score += value;
+    }
+
+    public void ShowScore()
+    {
+        scoreText.text = "Score: " + GetScore().ToString();
+    }
+
+    public int GetScore()
+    {
+        return score;
+    }
+
 }

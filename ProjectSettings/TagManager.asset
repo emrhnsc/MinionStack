@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Platform
+  - RedRound
+  - OrangeRound
+  - GoldRound
   layers:
   - Default
   - TransparentFX

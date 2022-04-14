@@ -7,7 +7,6 @@ using TMPro;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] float speed = 5f;
-    [SerializeField] float height = 1.3f;
     bool isTouched = false;
     bool isGrounded;
     public bool isStacked = false;
@@ -35,8 +34,9 @@ public class PlayerController : MonoBehaviour
     Rigidbody rb;
     MinionController minion;
     Empty empty;
-    ConfigurableJoint joint;
-    public JointDrive drive;
+    [HideInInspector] public ConfigurableJoint joint;
+    [HideInInspector] public JointDrive drive;
+    [HideInInspector] public JointDrive drive0;
 
     void Awake()
     {
@@ -51,26 +51,29 @@ public class PlayerController : MonoBehaviour
     {
         runTowards = new Vector3(0, 0, speed);
         score = 0;
-        joint.connectedBody = empty.rb;
-        CreateJointDrive();
-    }
-
-    void Update()
-    {
-        Movement();
-        Jump();
-    }
-
-    void CreateJointDrive()
-    {
-        drive = new JointDrive();
-        drive.positionSpring = 100;
+        NewJointDrive();
+        ZeroJointDrive();
     }
 
     void FixedUpdate()
     {
+        Movement();
+        Jump();
+
         Vector3 gravity = gravityScale * globalGravity * Vector3.up;
         rb.AddForce(gravity, ForceMode.Acceleration);
+    }
+
+    void NewJointDrive()
+    {
+        drive = new JointDrive();
+        drive.positionSpring = 1000;
+    }
+
+    void ZeroJointDrive()
+    {
+        drive0 = new JointDrive();
+        drive0.positionSpring = 0;
     }
 
     void Movement()
@@ -102,8 +105,10 @@ public class PlayerController : MonoBehaviour
             isStacked = true;
             animator.Play("Dynamic Idle");
             joint.yMotion = ConfigurableJointMotion.Locked;
-            joint.connectedBody = minion.rb;
+            joint.zMotion = ConfigurableJointMotion.Locked;
             joint.yDrive = drive;
+            joint.xDrive = drive;
+            joint.zDrive = drive;
         }
     }
 
@@ -145,6 +150,8 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionExit(Collision other)
     {
+
+
         if (other.gameObject.tag == "RedRound")
         {
             redColliding = false;

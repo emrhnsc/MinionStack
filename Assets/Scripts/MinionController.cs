@@ -8,7 +8,6 @@ public class MinionController : MonoBehaviour
     [SerializeField] float speed = 5f;
     bool isTouched = false;
     bool isGrounded = true;
-    bool isStacked = false;
 
     [Header("Jump")]
     [SerializeField] float yForce = 5f;
@@ -29,45 +28,74 @@ public class MinionController : MonoBehaviour
     [SerializeField] static float m_globalGravity = -9.81f;
 
     Vector3 runTowards;
-    Animator animator;
+    [HideInInspector] public Animator animator;
     [HideInInspector] public Rigidbody rb;
     TargetRamps targetRamps;
-    PlayerController playerController;
-    ConfigurableJoint joint;
+    PlayerController player;
+    ConfigurableJoint m_joint;
+    ConfigurableJoint p_joint;
+    JointDrive m_drive;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
         targetRamps = FindObjectOfType<TargetRamps>();
-        playerController = FindObjectOfType<PlayerController>();
-        joint = gameObject.GetComponent<ConfigurableJoint>();
+        player = FindObjectOfType<PlayerController>();
+        m_joint = gameObject.GetComponent<ConfigurableJoint>();
+        p_joint = player.GetComponent<ConfigurableJoint>();
     }
 
     void Start()
     {
         runTowards = new Vector3(0, 0, speed);
         score = 0;
-    }
-
-    void Update()
-    {
-        Movement();
-        Jump();
+        CreateJointDrive();
     }
 
     void FixedUpdate()
     {
+        Movement();
+        Jump();
+        Falling();
+
         Vector3 gravity = m_gravityScale * m_globalGravity * Vector3.up;
         rb.AddForce(gravity, ForceMode.Acceleration);
     }
 
+
     void Movement()
     {
-        if (playerController.isStacked)
+        if (player.isStacked)
         {
             transform.position += runTowards * Time.deltaTime;
         }
+    }
+
+    void Falling()
+    {
+        if (transform.position.y < 0)
+        {
+            player.isStacked = false;
+            animator.SetTrigger("Death");
+            BreakJoint();
+        }
+    }
+
+    void CreateJointDrive()
+    {
+        m_drive = new JointDrive();
+        m_drive.positionSpring = 1000;
+    }
+
+    void BreakJoint()
+    {
+        p_joint.connectedBody = null;
+        player.joint.yMotion = ConfigurableJointMotion.Free;
+        player.joint.zMotion = ConfigurableJointMotion.Free;
+        player.joint.xDrive = player.drive0;
+        player.joint.yDrive = player.drive0;
+        player.joint.zDrive = player.drive0;
     }
 
     void OnEnable()
@@ -79,7 +107,7 @@ public class MinionController : MonoBehaviour
 
     void Jump()
     {
-        if (Input.GetKey(KeyCode.Mouse0) && isGrounded && playerController.isStacked)
+        if (Input.GetKey(KeyCode.Mouse0) && isGrounded && player.isStacked)
         {
             isGrounded = false;
             rb.velocity = new Vector3(0, yForce, zForce);
@@ -87,10 +115,30 @@ public class MinionController : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Player")
+        {
+            animator.SetTrigger("Running");
+        }
+
+        if (other.gameObject.tag == "Minion" && !player.isStacked)
+        {
+            player.isStacked = true;
+            animator.Play("Dynamic Idle");
+            m_joint.yMotion = ConfigurableJointMotion.Locked;
+            m_joint.zMotion = ConfigurableJointMotion.Locked;
+            m_joint.connectedBody = other.gameObject.GetComponent<Rigidbody>();
+            m_joint.yDrive = m_drive;
+            m_joint.xDrive = m_drive;
+            m_joint.zDrive = m_drive;
+        }
+    }
+
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.gameObject.tag == "Platform" && playerController.isStacked)
+        if (other.gameObject.tag == "Platform" && player.isStacked)
         {
             isGrounded = true;
             animator.SetTrigger("Running");
@@ -137,14 +185,6 @@ public class MinionController : MonoBehaviour
         {
             isTouched = false;
             goldColliding = false;
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Player")
-        {
-            animator.SetTrigger("Running");
         }
     }
 

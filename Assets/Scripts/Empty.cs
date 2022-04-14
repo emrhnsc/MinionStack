@@ -11,8 +11,4 @@ public class Empty : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    void Update()
-    {
-
-    }
 }

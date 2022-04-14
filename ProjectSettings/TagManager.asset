@@ -9,6 +9,7 @@ TagManager:
   - OrangeRound
   - GoldRound
   - TargetRamps
+  - Minion
   layers:
   - Default
   - TransparentFX
@@ -17,10 +18,10 @@ TagManager:
   - Water
   - UI
   - Player
-  - Round
   - 
-  - 
-  - 
+  - Ground
+  - Ramps
+  - Minion
   - 
   - 
   - 

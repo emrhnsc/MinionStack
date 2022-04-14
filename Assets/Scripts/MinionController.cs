@@ -1,16 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 
-public class PlayerController : MonoBehaviour
+public class MinionController : MonoBehaviour
 {
     [SerializeField] float speed = 5f;
-    [SerializeField] float height = 1.3f;
     bool isTouched = false;
-    bool isGrounded;
-    public bool isStacked = false;
+    bool isGrounded = true;
+    bool isStacked = false;
 
     [Header("Jump")]
     [SerializeField] float yForce = 5f;
@@ -27,23 +25,22 @@ public class PlayerController : MonoBehaviour
     [SerializeField] int score;
 
     [Header("Gravity")]
-    [SerializeField] float gravityScale = 1f;
-    [SerializeField] static float globalGravity = -9.81f;
+    [SerializeField] float m_gravityScale = 1f;
+    [SerializeField] static float m_globalGravity = -9.81f;
 
     Vector3 runTowards;
     Animator animator;
-    Rigidbody rb;
-    MinionController minion;
-    Empty empty;
+    [HideInInspector] public Rigidbody rb;
+    TargetRamps targetRamps;
+    PlayerController playerController;
     ConfigurableJoint joint;
-    public JointDrive drive;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
-        minion = FindObjectOfType<MinionController>();
-        empty = FindObjectOfType<Empty>();
+        targetRamps = FindObjectOfType<TargetRamps>();
+        playerController = FindObjectOfType<PlayerController>();
         joint = gameObject.GetComponent<ConfigurableJoint>();
     }
 
@@ -51,8 +48,6 @@ public class PlayerController : MonoBehaviour
     {
         runTowards = new Vector3(0, 0, speed);
         score = 0;
-        joint.connectedBody = empty.rb;
-        CreateJointDrive();
     }
 
     void Update()
@@ -61,21 +56,18 @@ public class PlayerController : MonoBehaviour
         Jump();
     }
 
-    void CreateJointDrive()
-    {
-        drive = new JointDrive();
-        drive.positionSpring = 100;
-    }
-
     void FixedUpdate()
     {
-        Vector3 gravity = gravityScale * globalGravity * Vector3.up;
+        Vector3 gravity = m_gravityScale * m_globalGravity * Vector3.up;
         rb.AddForce(gravity, ForceMode.Acceleration);
     }
 
     void Movement()
     {
-        transform.position += runTowards * Time.deltaTime;
+        if (playerController.isStacked)
+        {
+            transform.position += runTowards * Time.deltaTime;
+        }
     }
 
     void OnEnable()
@@ -87,7 +79,7 @@ public class PlayerController : MonoBehaviour
 
     void Jump()
     {
-        if (Input.GetKey(KeyCode.Mouse0) && isGrounded)
+        if (Input.GetKey(KeyCode.Mouse0) && isGrounded && playerController.isStacked)
         {
             isGrounded = false;
             rb.velocity = new Vector3(0, yForce, zForce);
@@ -95,21 +87,10 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.tag == "Minion" && !isStacked)
-        {
-            isStacked = true;
-            animator.Play("Dynamic Idle");
-            joint.yMotion = ConfigurableJointMotion.Locked;
-            joint.connectedBody = minion.rb;
-            joint.yDrive = drive;
-        }
-    }
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.gameObject.tag == "Platform" && !isStacked)
+        if (other.gameObject.tag == "Platform" && playerController.isStacked)
         {
             isGrounded = true;
             animator.SetTrigger("Running");
@@ -140,7 +121,6 @@ public class PlayerController : MonoBehaviour
                 other.gameObject.GetComponent<MeshRenderer>().material.color = Color.white;
             }
         }
-
     }
 
     private void OnCollisionExit(Collision other)
@@ -160,6 +140,15 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Player")
+        {
+            animator.SetTrigger("Running");
+        }
+    }
+
+
     public void IncreaseScore(int value)
     {
         score += value;
@@ -174,5 +163,4 @@ public class PlayerController : MonoBehaviour
     {
         return score;
     }
-
 }
